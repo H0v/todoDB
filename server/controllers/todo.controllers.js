@@ -1,22 +1,22 @@
 const Todo = require("../models/todo.model");
-const errorHandler = require("../middleware/errorHandler");
+const asyncWrapper = require("../middleware/asyncWrapper");
+// const customError = require("../helper/customError");
+const { idValidation, isTodo } = require("../helper/validation");
 
-exports.getAllTodos = errorHandler(async (req, res) => {
+exports.getAllTodos = asyncWrapper(async (req, res) => {
   const todos = await Todo.find();
   res.status(200).json({ todos: todos });
 });
 
-exports.addTodo = errorHandler(async (req, res) => {
+exports.addTodo = asyncWrapper(async (req, res) => {
   const todo = await Todo.create(req.body);
   res.status(200).json({ success: true });
 });
 
-exports.editTodo = errorHandler(async (req, res) => {
-  try {
-    const todo = await Todo.find({ _id: req.body.id });
-  } catch (err) {
-    throw new Error("Todo Not Found");
-  }
+exports.editTodo = asyncWrapper(async (req, res) => {
+  idValidation(req);
+  const todo = await Todo.findById(req.params.id);
+  isTodo(todo);
   await Todo.updateOne({ _id: req.params.id }, { $set: { isEditing: true } });
   await Todo.updateMany(
     { _id: { $ne: req.params.id } },
@@ -25,12 +25,18 @@ exports.editTodo = errorHandler(async (req, res) => {
   res.status(200).json({ success: true });
 });
 
-exports.deleteTodo = errorHandler(async (req, res) => {
-  const todo = await Todo.deleteOne({ _id: req.params.id });
+exports.deleteTodo = asyncWrapper(async (req, res) => {
+  idValidation(req);
+  const todo = await Todo.findById(req.params.id);
+  isTodo(todo);
+  await Todo.deleteOne({ _id: req.params.id });
   res.status(200).json({ success: true });
 });
 
-exports.saveTodo = errorHandler(async (req, res) => {
+exports.saveTodo = asyncWrapper(async (req, res) => {
+  idValidation(req);
+  const todo = await Todo.findById(req.params.id);
+  isTodo(todo);
   if (req.body.value.trim() === "") {
     await Todo.deleteOne({ _id: req.params.id });
     res
@@ -45,8 +51,10 @@ exports.saveTodo = errorHandler(async (req, res) => {
   }
 });
 
-exports.checkTodo = errorHandler(async (req, res) => {
-  const todo = await Todo.findOne({ _id: req.params.id });
+exports.checkTodo = asyncWrapper(async (req, res) => {
+  idValidation(req);
+  const todo = await Todo.findById(req.params.id);
+  isTodo(todo);
   await Todo.updateOne({ _id: req.params.id }, { $set: { done: !todo.done } });
   res.status(200).json({ success: true });
 });
