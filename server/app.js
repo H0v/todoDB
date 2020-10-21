@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 const connectDB = require("../config/connectDB");
 const errorHandler = require("./middleware/errorHandler");
 const app = express();
-dotenv.config({ path: "./config/config.env" });
+dotenv.config({ path: "./config/.env" });
 const PORT = process.env.PORT;
 
 app.use(cors());
